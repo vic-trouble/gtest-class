@@ -10,6 +10,7 @@ target_link_libraries(RecentApp RecentLib)
 include(gtest.cmake)
 
 add_executable(RecentTest test.cpp)
+set_target_properties(RecentTest PROPERTIES OUTPUT_NAME "Recent.Tests"${CMAKE_RUNTIME_SUFFIX})
 target_link_libraries(RecentTest RecentLib gtest)
 
 enable_testing()

@@ -10,11 +10,16 @@ target_link_libraries(RecentApp RecentLib)
 include(gtest.cmake)
 
 if(XCODE)
-	add_library(RecentTest MODULE test.cpp GoogleTests.mm)
-	set_target_properties(RecentTest PROPERTIES
-		BUNDLE YES
-		XCODE_PRODUCT_TYPE com.apple.product-type.bundle.unit-test)
-	target_link_libraries(RecentTest "-framework XCTest")
+	option(USE_XCTEST "Integrate tests with Xcode" ON)
+	if(USE_XCTEST)
+		add_library(RecentTest MODULE test.cpp GoogleTests.mm)
+		set_target_properties(RecentTest PROPERTIES
+			BUNDLE YES
+			XCODE_PRODUCT_TYPE com.apple.product-type.bundle.unit-test)
+		target_link_libraries(RecentTest "-framework XCTest")
+	else()
+		add_executable(RecentTest test.cpp)
+	endif()
 else()
 	add_executable(RecentTest test.cpp)
 endif()

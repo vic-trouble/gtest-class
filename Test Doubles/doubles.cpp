@@ -1,17 +1,23 @@
 #include "doubles.h"
 
 #include <chrono>
+#include <iostream>
 #include <thread>
 
-int HTTPClient::Send(const std::string &request, std::string &response)
+int HTTPClient::Send(const std::string &request, std::string &data)
 {
+	// fake for the sake of the exercise
+	std::cerr << "HTTP " << request << "..." << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(5));
-	// simplified for the sake of the exercise
-	response = "here's your data";
+
+	data = "data";
 	return 200;
 }
 
-DownloadQueue::DownloadQueue()
+//////////////////////////////////////////////////////////////////////////
+
+DownloadQueue::DownloadQueue(IHTTPClient &http)
+	: http_(http)
 {
 	worker_ = std::thread([](DownloadQueue *self) { self->WorkerProc(); }, this);
 }
@@ -33,7 +39,7 @@ void DownloadQueue::WorkerProc()
 			que_.pop_front();
 			lock.unlock();
 			std::string data;
-			int code = http_.Send("GET " + res, data);
+			auto code = http_.Send("GET " + res, data);
 			if (200 <= code && code < 300)
 			{
 				if (succeeded_)
@@ -72,6 +78,7 @@ DownloadQueue::~DownloadQueue()
 
 void DownloadQueue::SetCallbacks(Callback &&succeeded, Callback &&failed)
 {
+	std::unique_lock<std::mutex> lock(mtx_);
 	succeeded_ = succeeded;
 	failed_ = failed;
 }

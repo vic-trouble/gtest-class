@@ -26,10 +26,6 @@
 #import <gtest/gtest.h>
 #import <objc/runtime.h>
 
-#include <UnitTesting/GTestUtilities.h>
-
-#include <boost/filesystem.hpp>
-
 using testing::TestCase;
 using testing::TestInfo;
 using testing::TestPartResult;
@@ -159,40 +155,10 @@ static void RunTest(id self, SEL _cmd) {
 
     (void)RUN_ALL_TESTS();
 
-    namespace fs = boost::filesystem;
-    if (fs::exists(GTEST_REPORT_FILENAME))
-    {
-        // если gtest репортит в режиме xml, надо сохранить отчет в отдельный файл,
-        // чтобы его не перезатер следующий тест-кейс
-        static int counter = 0;
-        fs::path report_filename = GTEST_REPORT_FILENAME;
-        fs::path next_report_filename = report_filename.parent_path() / (report_filename.stem().string() + std::to_string(counter++) + report_filename.extension().string());
-        if (fs::exists(next_report_filename))
-            fs::remove(next_report_filename);
-        fs::rename(GTEST_REPORT_FILENAME, next_report_filename);
-    }
-
     delete googleTest->listeners().Release(listener);
 
     int totalTestsRun = googleTest->successful_test_count() + googleTest->failed_test_count();
     XCTAssertEqual(totalTestsRun, 1, @"Expected to run a single test for filter \"%@\"", testFilter);
-}
-
-static void RemoveOldReports() {
-    namespace fs = boost::filesystem;
-    fs::path report_filename = GTEST_REPORT_FILENAME;
-    std::string report_stem = report_filename.stem().string();
-
-    fs::directory_iterator it(report_filename.parent_path()), end;
-    for (; it != end; ++it) {
-        auto path = it->path();
-        if (path.extension() == report_filename.extension()) {
-            auto path_stem = path.stem().string();
-            if (path_stem.length() >= report_stem.length() && path_stem.compare(0, report_stem.length(), report_stem) == 0) {
-                fs::remove(path);
-            }
-        }
-    }
 }
 
 @implementation GoogleTestLoader
@@ -214,23 +180,18 @@ static void RemoveOldReports() {
 }
 
 + (void)registerTestClasses {
-    // удалим отчеты, которые могли остаться с прошлого запуска
-    RemoveOldReports();
-
     // Pass the command-line arguments to Google Test to support the --gtest options
     NSArray *arguments = [[NSProcessInfo processInfo] arguments];
 
     int i = 0;
-    int argc = (int)[arguments count] + 1;
+    int argc = (int)[arguments count];
     const char **argv = (const char **)calloc((unsigned int)argc + 1, sizeof(const char *));
     for (NSString *arg in arguments) {
         argv[i++] = [arg UTF8String];
         printf("arg: %s\n", argv[i-1]);
     }
 
-    argv[i++] = GoogleTestXmlFormatSwitch;
-
-    Tests::GTestUtilities::InitializeGTest(argc, (char **)argv, GTEST_REPORT_FILENAME);
+    testing::InitGoogleTest(&argc, (char **)argv);
     free(argv);
 
     UnitTest *googleTest = UnitTest::GetInstance();

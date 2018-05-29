@@ -9,9 +9,14 @@ target_link_libraries(RecentApp RecentLib)
 
 include(gtest.cmake)
 
-add_executable(RecentTest test.cpp)
 if(XCODE)
-	target_sources(RecentTest GoogleTests.mm)
+	add_library(RecentTest MODULE test.cpp GoogleTests.mm)
+	set_target_properties(RecentTest PROPERTIES
+		BUNDLE YES
+		XCODE_PRODUCT_TYPE com.apple.product-type.bundle.unit-test)
+	target_link_libraries(RecentTest "-framework XCTest")
+else()
+	add_executable(RecentTest test.cpp)
 endif()
 
 target_link_libraries(RecentTest RecentLib gtest)

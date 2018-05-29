@@ -47,3 +47,19 @@ TEST(RUList, Limited_Capacity)
 	EXPECT_EQ(rul[0], "new");
 	EXPECT_EQ(rul[1], "old");
 }
+
+TEST(RUList, Duplicate_Insertion_Should_Move)
+{
+	// arrange
+	Recent::RUList rul;
+
+	// act
+	rul.push("duplicate");
+	rul.push("unique");
+	rul.push("duplicate");
+
+	// assert
+	ASSERT_EQ(rul.size(), 2);
+	EXPECT_EQ(rul[0], "duplicate");
+	EXPECT_EQ(rul[1], "unique");
+}

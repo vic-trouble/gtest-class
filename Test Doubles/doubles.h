@@ -4,36 +4,29 @@
 #include <mutex>
 #include <string>
 
-struct IHTTPClient
-{
-	virtual ~IHTTPClient() = default;
-
-	virtual int Send(const std::string &request, std::string &response) = 0;
-};
-
-class HTTPClient: public IHTTPClient
+class HTTPClient
 {
 public:
-	int Send(const std::string &request, std::string &response) override;
+	int Send(const std::string &request, std::string &response);
 };
-
-using Callback = std::function<void(const std::string &resource)>;
 
 class DownloadQueue
 {
 public:
-	explicit DownloadQueue(IHTTPClient &http);
+	DownloadQueue();
 	~DownloadQueue();
 
 	void Add(const std::string &resource);
 	void Cancel();
+
+	using Callback = std::function<void(const std::string &resource)>;
 	void SetCallbacks(Callback &&succeeded, Callback &&failed);
 
 private:
 	void WorkerProc();
 
 private:
-	IHTTPClient &http_;
+	HTTPClient http_;
 	std::list<std::string> que_;
 	std::thread worker_;
 	std::mutex mtx_;

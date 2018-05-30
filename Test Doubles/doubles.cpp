@@ -16,8 +16,7 @@ int HTTPClient::Send(const std::string &request, std::string &data)
 
 //////////////////////////////////////////////////////////////////////////
 
-DownloadQueue::DownloadQueue(IHTTPClient &http)
-	: http_(http)
+DownloadQueue::DownloadQueue()
 {
 	worker_ = std::thread([](DownloadQueue *self) { self->WorkerProc(); }, this);
 }
@@ -35,11 +34,16 @@ void DownloadQueue::WorkerProc()
 		std::unique_lock<std::mutex> lock(mtx_);
 		if (!que_.empty())
 		{
+			// get task from que
 			std::string res = que_.front();
 			que_.pop_front();
 			lock.unlock();
+
+			// send request
 			std::string data;
-			auto code = http_.Send("GET " + res, data);
+			int code = http_.Send("GET " + res, data);
+
+			// execute callback
 			if (200 <= code && code < 300)
 			{
 				if (succeeded_)
